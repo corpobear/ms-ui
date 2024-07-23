@@ -1,0 +1,47 @@
+name: Trigger auto deployment for ms-ui
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/ms-ui-AutoDeployTrigger-b6d7c522-5c43-4109-b402-a05148cd9f06.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.MSUI_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.MSUI_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.MSUI_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: microservicewebapp.azurecr.io
+          registryUsername: ${{ secrets.MSUI_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.MSUI_REGISTRY_PASSWORD }}
+          containerAppName: ms-ui
+          resourceGroup: microservice-web-app
+          imageToBuild: microservicewebapp.azurecr.io/ms-ui:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
