@@ -1,0 +1,27 @@
+FROM node:20.14.0-bookworm
+
+WORKDIR /usr/src/application
+
+COPY ./package.json .
+COPY ./package-lock.json .
+
+RUN npm install
+
+# Install xdg-utils using apk
+# RUN apk update \
+#     && apk add --no-cache xdg-utils
+
+ENV ENVIRONMENT=local
+
+COPY . .
+COPY .env.local .env
+# Ensure react-scripts has execution permissions
+# Change ownership recursively of react-scripts
+RUN chown -R root:root ./node_modules/.bin/react-scripts
+
+# Ensure executable permissions for reac.bin/react-scriptst-scripts
+RUN chmod -R 755 ./node_modules/.bin/react-scripts
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "npm start"]
